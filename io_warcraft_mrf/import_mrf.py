@@ -42,6 +42,7 @@ def load_morf(filepath, divisor, shadesmooth):
 
     def get_uv(data, offset):
         u, v = struct.unpack_from('<ff', data, offset)
+        v = 1 - v #Mirror UV along the Y-axis
         offset += 8
         return (u, v), offset
 
@@ -63,8 +64,8 @@ def load_morf(filepath, divisor, shadesmooth):
         return offsetsTable  
         
     def read_texture(data, offset, offsetend):
-        #Похоже, что варкрафт (по крайней мере реф) парсит весь чанк, а потом обрезает строку до первой точки
-        #Сделаем также
+        #it looks like Warcraft cuts the string to the first dot
+        #lets do the same
         texture = get_strn(data, offset, offsetend) 
 
         dot_index = texture.find('.')
@@ -95,7 +96,7 @@ def load_morf(filepath, divisor, shadesmooth):
         
     def read_vectors(data, offset, vnumber):
         #two vectors per vertex
-        #first vector: coordinates, second: normals
+        #first vector is position, second is normal
         #squared values of the second vector are 1.0, which confirms that these are normals
         #not sure if they can be used in a blender
 
@@ -155,7 +156,7 @@ def load_morf(filepath, divisor, shadesmooth):
                 shape_key.data[i].co = coord
 
             shape_key.value = 0.0
-            if frame != 0: #в нулевом кадре не будем создавать КК, так как будет дубль
+            if frame != 0: #there is no need to create keyframe in position 0, since there will be a double
                 shape_key.keyframe_insert(data_path="value", frame=frame)
                 shape_key.value = 1.0
                 shape_key.keyframe_insert(data_path="value", frame=frame+1)
@@ -196,9 +197,9 @@ def load_morf(filepath, divisor, shadesmooth):
         bounds = bounds/divisor
         print('Bounds Radius: ', bounds)
         
-        #на 40 (в десятичной: 64) сдвиге начинается таблица сдвигов.   
+        #на 0x0040 (64) сдвиге начинается таблица сдвигов.   
         offsets = read_offsetsTable(data, 64, kfnumber)
-        texture = read_texture(data, offsets[1], offsets[2]) #сдвиг чанка с текстурой находится на этой позиции
+        texture = read_texture(data, offsets[1], offsets[2])
         print('Texture path: ', texture)
 
         faces = read_faces(data, offsets[2], facesnumber)

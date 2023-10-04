@@ -6,30 +6,30 @@ from mathutils import geometry
 from . import MessageBox
 #os.system('cls')
 
-def save_morf(filepath, scale_factor, texture_path, kf_range):
+def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
     def set_dword(data, value):
-        data += struct.pack('<I', value)
+        data.extend(struct.pack('<I', value))
         return data
 
     def set_float(data, value):
-        data += struct.pack('<f', value)
+        data.extend(struct.pack('<f', value))
         return data
 
     def set_str(data, value):
         b = value.encode('utf-8')
-        data += struct.pack('%ds' % len(b), b)
+        data.extend(struct.pack('%ds' % len(b), b))
         return data
 
     def set_vector(data, vector):
-        data += struct.pack('<fff', *vector)
+        data.extend(struct.pack('<fff', *vector))
         return data
 
     def set_triangle(data, triangle):
-        data += struct.pack('<HHH', *triangle)
+        data.extend(struct.pack('<HHH', *triangle))
         return data
 
     def set_uv(data, uv):
-        data += struct.pack('<ff', *uv)
+        data.extend(struct.pack('<ff', *uv))
         return data
 
     def pad_chunk(data):
@@ -62,7 +62,6 @@ def save_morf(filepath, scale_factor, texture_path, kf_range):
         set_float(data, 30) # (?) Maybe Bounds Radius
 
         data = pad_chunk_size(data, 64)
-
         return data
 
     def write_texture(path):
@@ -162,7 +161,8 @@ def save_morf(filepath, scale_factor, texture_path, kf_range):
 
                 if v.index in unique_uvs:
                     continue
-
+                
+                luv.uv.y = 1 - luv.uv.y #Mirror UV along the Y-axis
                 unique_uvs[v.index] = luv.uv
 
         for vert_index, uv in unique_uvs.items():
@@ -180,7 +180,7 @@ def save_morf(filepath, scale_factor, texture_path, kf_range):
         data = bytearray()
         data = set_dword(data, 0)
 
-        #нужно определить длину таблицы
+        #calculate table length
         table_length = (kfcount + 4) * 4
         if table_length % 16 != 0:
             table_length = ((table_length // 16) + 1) * 16
@@ -206,34 +206,26 @@ def save_morf(filepath, scale_factor, texture_path, kf_range):
 
 
     #starting export
-    obj = bpy.context.active_object  #get active object
 
-    if obj and obj.type == 'MESH':
-        bpy.context.view_layer.objects.active = obj
-        bpy.ops.object.mode_set(mode='EDIT')
+    #Triangulating an object in a scene is a bad approach
+    #Rework needed!
 
-        #Triangulating an object in a scene is a bad approach
-        #Rework needed!
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
 
-        bpy.ops.mesh.select_all(action='SELECT')
-        bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-
-        nvertices = len(obj.data.vertices)
-        texturedata = write_texture(texture_path)
-        facesdata, nfaces = get_triangle_representation(obj)
-        uvdata = get_uv_coords(obj)
-        animdata, kfcount, duration, length = get_keyframes(obj, kf_range[0], kf_range[1])
-        offsettable = write_offset_table(kfcount, length)
-        data_list = [offsettable, texturedata, facesdata, uvdata, animdata]
-        
-        mrfdata = bytearray()  
-        mrfdata = write_data_chunk(mrfdata, kfcount, nvertices, nfaces, duration)
-        
-        for data in data_list:
-            mrfdata.extend(data)
-        
-        with open(filepath, 'wb') as f:             
-            f.write(mrfdata) 
-    else:
-        MessageBox.show('Error!', 'No Active Object or Object type is not a Mesh', 'ERROR')
-        return
+    nvertices = len(obj.data.vertices)
+    texturedata = write_texture(texture_path)
+    facesdata, nfaces = get_triangle_representation(obj)
+    uvdata = get_uv_coords(obj)
+    animdata, kfcount, duration, length = get_keyframes(obj, kf_range[0], kf_range[1])
+    offsettable = write_offset_table(kfcount, length)
+    data_list = [offsettable, texturedata, facesdata, uvdata, animdata]
+    
+    mrfdata = bytearray()  
+    mrfdata = write_data_chunk(mrfdata, kfcount, nvertices, nfaces, duration)
+    
+    for data in data_list:
+        mrfdata.extend(data)
+    
+    with open(filepath, 'wb') as f:             
+        f.write(mrfdata) 

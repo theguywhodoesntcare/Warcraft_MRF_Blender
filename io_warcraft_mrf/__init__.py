@@ -3,8 +3,8 @@ bl_info = {
     "author": "poisoNDealer",
     "version": (0, 2),
     "blender": (3, 6, 2),
-    "location": "File > Import > Warcraft MORF (.mrf)",
-    "description": "Imports Warcraft .mrf files and reproduces their animations using Shape Keys",
+    "location": "File > Import > Warcraft MORF (.mrf), File > Export > Warcraft MORF (.mrf)",
+    "description": "Imports Warcraft .mrf files and reproduces their animations using Shape Keys.\nExports the selected mesh from the Blender scene to Warcraft .mrf format.",
     "warning": "",
     "wiki_url": "",
     "category": "Import-Export",
@@ -88,8 +88,30 @@ class ExportMRFOperator(Operator, ExportHelper):
         box.label(text="Use a Scale Factor to scale model by N times")
         layout.prop(self, 'scale_factor')
 
+    def invoke(self, context, event):
+        if bpy.context.selected_objects:  # check if there is any selected object
+            for obj in bpy.context.selected_objects:
+                if obj.type == 'MESH':
+                    bpy.context.view_layer.objects.active = obj
+                    bpy.ops.object.mode_set(mode='EDIT')
+                else:
+                    MessageBox.show('Error!', 'One or more selected objects are not a Mesh', 'ERROR')
+                    return {'CANCELLED'}
+        else:
+            MessageBox.show('Error!', 'No Object Selected', 'ERROR')
+            return {'CANCELLED'}
+
+        return ExportHelper.invoke(self, context, event)  # open the export window
+
     def execute(self, context):
-        #print(f"Selected file: {self.filepath}")
+        obj = bpy.context.active_object  #get active object
+
+        if obj and obj.type == 'MESH':
+            bpy.context.view_layer.objects.active = obj
+            bpy.ops.object.mode_set(mode='EDIT')
+        else:
+            MessageBox.show('Error!', 'No Active Object or Object type is not a Mesh', 'ERROR')
+            return
 
         # ===Get Texture Path===
         mat = bpy.context.object.active_material
@@ -123,7 +145,8 @@ class ExportMRFOperator(Operator, ExportHelper):
 
         print(kf_start)
         print(kf_end)        
-        export_mrf.save_morf(self.filepath, self.scale_factor, texture_path, (kf_start, kf_end))
+        export_mrf.save_morf(self.filepath, obj, self.scale_factor, texture_path, (kf_start, kf_end))
+        
         return {'FINISHED'}
 
 
@@ -168,7 +191,7 @@ def menu_func_import(self, context):
     self.layout.operator(ImportMRFOperator.bl_idname, text="Warcraft MORF (.mrf)")
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMRFOperator.bl_idname, text="Warcraft MORF (.mrf)")
+    self.layout.operator(ExportMRFOperator.bl_idname, text="Triangulate and Export Warcraft MORF (.mrf)")
 
 def register():
     bpy.utils.register_class(MRFTextureProperties)
