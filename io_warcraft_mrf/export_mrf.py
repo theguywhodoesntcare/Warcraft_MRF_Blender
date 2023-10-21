@@ -2,7 +2,7 @@ import os
 import struct
 import bpy
 import bmesh
-from mathutils import geometry
+from mathutils import Vector, geometry
 from . import MessageBox
 #os.system('cls')
 
@@ -161,9 +161,10 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
 
                 if v.index in unique_uvs:
                     continue
-                
-                luv.uv.y = 1 - luv.uv.y #Mirror UV along the Y-axis
-                unique_uvs[v.index] = luv.uv
+
+                # Create a new UV coordinate and mirror it along the Y-axis
+                mirrored_uv = Vector((luv.uv.x, 1 - luv.uv.y))
+                unique_uvs[v.index] = mirrored_uv
 
         for vert_index, uv in unique_uvs.items():
             data = set_uv(data, uv)
@@ -174,6 +175,7 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         bpy.ops.object.mode_set(mode='OBJECT')
 
         return data
+
 
 
     def write_offset_table(kfcount, length):
