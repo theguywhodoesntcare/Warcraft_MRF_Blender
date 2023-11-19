@@ -60,7 +60,7 @@ namespace mdx2mrf
             offset += mappingBytes.Count();
             SetDword(table, offset);
 
-            for (int i = 0; i < kf_number; i++)
+            for (int i = 0; i < kf_number - 1; i++)
             {
                 offset += vertexBytes.Count();
                 SetDword(table, offset);
