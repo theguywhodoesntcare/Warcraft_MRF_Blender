@@ -1,0 +1,9 @@
+C:\Users\Administrator\source\repos\nrmls\bin\Debug\nrmls.exe
+C:\Users\Administrator\source\repos\nrmls\bin\Debug\nrmls.pdb
+C:\Users\Administrator\source\repos\nrmls\bin\Debug\MdxLib.dll
+C:\Users\Administrator\source\repos\nrmls\bin\Debug\MdxLib.xml
+C:\Users\Administrator\source\repos\nrmls\obj\Debug\nrmls.csproj.AssemblyReference.cache
+C:\Users\Administrator\source\repos\nrmls\obj\Debug\nrmls.csproj.CoreCompileInputs.cache
+C:\Users\Administrator\source\repos\nrmls\obj\Debug\nrmls.csproj.CopyComplete
+C:\Users\Administrator\source\repos\nrmls\obj\Debug\nrmls.exe
+C:\Users\Administrator\source\repos\nrmls\obj\Debug\nrmls.pdb
