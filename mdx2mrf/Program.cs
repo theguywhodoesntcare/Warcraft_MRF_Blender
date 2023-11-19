@@ -17,10 +17,7 @@ namespace mdx2mrf
 
             string filePath = args[0];
             if (!File.Exists(filePath))
-            {
-                Console.WriteLine("Файл не существует.");
                 return;
-            }
 
             CModel Model = new CModel();
 
@@ -30,7 +27,8 @@ namespace mdx2mrf
 
                 byte[] mrfData = Parser.Parse(Model);
 
-                string savePath = Path.Combine(Path.GetDirectoryName(filePath), Path.GetFileNameWithoutExtension(filePath) + "_new.mrf");
+
+                string savePath = Path.Combine(Path.GetDirectoryName(filePath), "arthascape" + Path.GetFileNameWithoutExtension(filePath) + ".mrf");
 
                 if (mrfData != null) File.WriteAllBytes(savePath, mrfData);
 
