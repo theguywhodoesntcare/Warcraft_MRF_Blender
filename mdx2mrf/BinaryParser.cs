@@ -14,8 +14,8 @@ namespace mdx2mrd
             List<byte> header = new List<byte>();
 
             byte[] magic = Encoding.UTF8.GetBytes("Morf");
-            int frames = 2; //number of keyframes
-            float frameTime = 2.0f; 
+            const int frames = 2; //number of keyframes
+            const float frameTime = 2.0f; 
 
             header.AddRange(magic);
             SetDword(header, frames);
@@ -43,24 +43,27 @@ namespace mdx2mrd
             {
                 table_length = ((table_length / 16) + 1) * 16;
             }
-            int offset = 0;
 
+            int offset = 0;
             SetDword(table, offset);
+
             offset += 64;
             offset += table_length;
             SetDword(table, offset);
+
             offset += texturePath.Count();
             SetDword(table, offset);
+
             offset += faceBytes.Count();
             SetDword(table, offset);
+
             offset += mappingBytes.Count();
             SetDword(table, offset);
-
 
             for (int i = 0; i < kf_number; i++)
             {
                 offset += vertexBytes.Count();
-                table.AddRange(BitConverter.GetBytes((Int32)offset));
+                SetDword(table, offset);
             }
 
             table = PadChunk(table);
@@ -96,12 +99,7 @@ namespace mdx2mrd
             for (int i = 0; i < countFaces; i++)
             {
                 CGeosetFace face = geoset.Faces[i];
-                //Console.WriteLine(face);
-                //Console.WriteLine($"{face.Vertex1.Object.ObjectId} {face.Vertex2.Object.ObjectId} {face.Vertex3.Object.ObjectId}");
-                SetWord(faceBytes, face.Vertex1.Object.ObjectId);
-                SetWord(faceBytes, face.Vertex2.Object.ObjectId);
-                SetWord(faceBytes, face.Vertex3.Object.ObjectId);
-                //Console.WriteLine(face.ToString());
+                SetTriangle(faceBytes, face);
             }
 
             faceBytes = PadChunk(faceBytes);
@@ -115,10 +113,7 @@ namespace mdx2mrd
             for (int i = 0; i < count; i++)
             {
                 CGeosetVertex vertex = geoset.Vertices[i];
-                //Console.WriteLine(vertex.Position);
-                //Console.WriteLine(vertex.TexturePosition);
-                //Console.WriteLine(vertex.Normal);
-                //Console.WriteLine();
+
                 SetVector2(mappingBytes, vertex.TexturePosition);
 
                 SetVector3(vertexBytes, vertex.Position);
@@ -127,6 +122,7 @@ namespace mdx2mrd
             }
             mappingBytes = PadChunk(mappingBytes);
             vertexBytes = PadChunk(vertexBytes);
+
 
             mrfData.AddRange(CreateHeader(count, countFaces * 3));
             mrfData.AddRange(CreateTable(textureBytes, faceBytes, mappingBytes, vertexBytes, 2));
@@ -139,6 +135,13 @@ namespace mdx2mrd
             byte[] mrfBin = mrfData.ToArray();
 
             return mrfBin;
+        }
+
+        static void SetTriangle(List<byte> list, CGeosetFace face)
+        {
+            SetWord(list, face.Vertex1.Object.ObjectId);
+            SetWord(list, face.Vertex2.Object.ObjectId);
+            SetWord(list, face.Vertex3.Object.ObjectId);
         }
 
         static void SetVector3(List<byte> list, CVector3 vector)
