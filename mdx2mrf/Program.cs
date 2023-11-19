@@ -1,5 +1,4 @@
-﻿using mdx2mrd;
-using MdxLib.Model;
+﻿using MdxLib.Model;
 using MdxLib.ModelFormats;
 using System;
 using System.IO;
@@ -32,7 +31,7 @@ namespace mdx2mrf
 
                 if (mrfData != null) File.WriteAllBytes(savePath, mrfData);
 
-                Console.ReadLine();
+                //Console.ReadLine();
             }
         }
     }
