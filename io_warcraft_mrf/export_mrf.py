@@ -29,8 +29,11 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         return data
 
     def set_uv(data, uv):
-        data.extend(struct.pack('<ff', *uv))
+        u, v = uv
+        v = 1 - v  #mirror Y
+        data.extend(struct.pack('<ff', u, v))
         return data
+
 
     def pad_chunk(data):
         #Fill the chunk with zeros so that its length is a multiple of 16
