@@ -191,7 +191,7 @@ def menu_func_import(self, context):
     self.layout.operator(ImportMRFOperator.bl_idname, text="Warcraft MORF (.mrf)")
 
 def menu_func_export(self, context):
-    self.layout.operator(ExportMRFOperator.bl_idname, text="Triangulate and Export Warcraft MORF (.mrf)")
+    self.layout.operator(ExportMRFOperator.bl_idname, text="Warcraft MORF (.mrf)")
 
 def register():
     bpy.utils.register_class(MRFTextureProperties)
