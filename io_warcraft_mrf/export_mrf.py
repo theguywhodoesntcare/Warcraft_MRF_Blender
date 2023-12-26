@@ -70,7 +70,7 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         data = pad_chunk(data)
         return data
     
-    def get_keyframes(obj, frame_start, frame_end):
+    def get_keyframes(obj, vertices_list, frame_start, frame_end):
         #Get vertex position and normals from every frame
         number = frame_end - frame_start + 1
 
@@ -86,7 +86,9 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
             
             framedata = bytearray()
             
-            for v in mesh.vertices:
+            for vert_info in vertices_list:
+                v = mesh.vertices[vert_info['index']]
+
                 global_coord = obj.matrix_world @ v.co
                 global_coord = global_coord * scale_factor
                 framedata = set_vector(framedata, global_coord)
@@ -105,77 +107,25 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         length = len(animdata)//number
         print('frame length: ', length)
         return animdata, number, dur, length
+    
+    def write_faces(faces):
+        triangle_count = len(faces)
 
-    def get_triangle_representation(obj):
-        #Get faces in a triangular representation.
-        #Currently the mesh is forced to be triangulated before export, so this is unnecessary
-        #But in the future, triangulation must be excluded
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        bm = bmesh.from_edit_mesh(obj.data)
-
-        triangle_count = 0
         data = bytearray()
-        for i, face in enumerate(bm.faces):
-            triangle = ()
-            #If a face has more than 3 vertices, divide it into triangles
-            if len(face.verts) > 3:
-                coords = [v.co for v in face.verts]
-                triangles = geometry.tessellate_polygon([coords])
-
-                for tri in triangles:
-                    #print(f"face {i} = {tuple(face.verts[v].index for v in tri)}")
-                    triangle = tuple(face.verts[v].index for v in tri)
-                    triangle_count += 1
-                    data = set_triangle(data, triangle)
-            else:
-                #print(f"face {i} = {tuple(v.index for v in face.verts)}")
-                triangle = tuple(v.index for v in face.verts)
-                triangle_count += 1
-                data = set_triangle(data, triangle)
-
-        bpy.ops.object.mode_set(mode='OBJECT')
-
-        #print(f"Total number of triangles: {triangle_count}")
+        for triangle in faces:
+            data = set_triangle(data, triangle)
 
         data = pad_chunk(data)
         return data, triangle_count
 
 
-    def get_uv_coords(obj):
-        #why tf get uv is so hard?
+    def write_uv(vertices):
         data = bytearray()
-        if bpy.context.mode != 'EDIT_MESH':
-            bpy.ops.object.mode_set(mode='EDIT')
+        for vert_info in vertices:
+            data = set_uv(data, vert_info['uv'])
 
-        me = obj.data
-        bm = bmesh.from_edit_mesh(me)
-
-        uv_layer = bm.loops.layers.uv.verify()
-
-        unique_uvs = {}
-
-        for v in bm.verts:
-            for l in v.link_loops:
-                luv = l[uv_layer]
-
-                if v.index in unique_uvs:
-                    continue
-
-                # Create a new UV coordinate and mirror it along the Y-axis
-                mirrored_uv = Vector((luv.uv.x, 1 - luv.uv.y))
-                unique_uvs[v.index] = mirrored_uv
-
-        for vert_index, uv in unique_uvs.items():
-            data = set_uv(data, uv)
-            #print(f'Vertex index: {vert_index}, UV coordinates: {uv}')
-        
-        bm.free()
         data = pad_chunk(data)
-        bpy.ops.object.mode_set(mode='OBJECT')
-
         return data
-
 
 
     def write_offset_table(kfcount, length):
@@ -207,19 +157,46 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         return data
 
 
+    def get_mesh_data(obj):
+        mesh = obj.data
+        uv_layer = mesh.uv_layers.active.data
+
+        unique_verts = []
+        triangles = []
+
+        for tri in mesh.loop_triangles:
+            triangle = []
+            for loop_index in tri.loops:
+                loop = mesh.loops[loop_index]
+                vert = mesh.vertices[loop.vertex_index]
+                uv_data = uv_layer[loop.index].uv
+
+                vert_info = {
+                    'index': vert.index,
+                    'position': vert.co,
+                    'normal': vert.normal,
+                    'uv': uv_data
+                }
+
+                if vert_info not in unique_verts:
+                    unique_verts.append(vert_info)
+
+                triangle.append(unique_verts.index(vert_info))
+
+            triangles.append(triangle)
+        return unique_verts, triangles
+
+
     #starting export
+    uniq_vertices, triangles_list = get_mesh_data(obj)
+    nvertices = len(uniq_vertices)
 
-    #Triangulating an object in a scene is a bad approach
-    #Rework needed!
-
-    bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.mesh.quads_convert_to_tris(quad_method='BEAUTY', ngon_method='BEAUTY')
-
-    nvertices = len(obj.data.vertices)
     texturedata = write_texture(texture_path)
-    facesdata, nfaces = get_triangle_representation(obj)
-    uvdata = get_uv_coords(obj)
-    animdata, kfcount, duration, length = get_keyframes(obj, kf_range[0], kf_range[1])
+    facesdata, nfaces = write_faces(triangles_list)
+    uvdata = write_uv(uniq_vertices)
+
+    animdata, kfcount, duration, length = get_keyframes(obj, uniq_vertices, kf_range[0], kf_range[1])
+
     offsettable = write_offset_table(kfcount, length)
     data_list = [offsettable, texturedata, facesdata, uvdata, animdata]
     
