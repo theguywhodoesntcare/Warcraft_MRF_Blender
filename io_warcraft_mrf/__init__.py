@@ -93,7 +93,7 @@ class ExportMRFOperator(Operator, ExportHelper):
             for obj in bpy.context.selected_objects:
                 if obj.type == 'MESH':
                     bpy.context.view_layer.objects.active = obj
-                    bpy.ops.object.mode_set(mode='EDIT')
+                    #bpy.ops.object.mode_set(mode='EDIT')
                 else:
                     MessageBox.show('Error!', 'One or more selected objects are not a Mesh', 'ERROR')
                     return {'CANCELLED'}
@@ -108,7 +108,7 @@ class ExportMRFOperator(Operator, ExportHelper):
 
         if obj and obj.type == 'MESH':
             bpy.context.view_layer.objects.active = obj
-            bpy.ops.object.mode_set(mode='EDIT')
+            #bpy.ops.object.mode_set(mode='EDIT')
         else:
             MessageBox.show('Error!', 'No Active Object or Object type is not a Mesh', 'ERROR')
             return
