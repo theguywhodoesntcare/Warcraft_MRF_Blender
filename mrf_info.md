@@ -33,10 +33,11 @@ In the original Warcraft, there are two options to display the MRF model and pla
 
 | Name  | Description |
 |------|-------|
+| **byte** | 1 byte |
 | **word** | 2 byte integer (Little-Endian) |
 | **dword** | 4 byte integer (Little-Endian) |
 | **float** | 4 byte floating point number (Little-Endian) |
-| **strn** | non-terminated string  |
+| **strn** | string (not null-terminated)|
 
 ### Derived data types
 | Name  | Description |
@@ -70,7 +71,7 @@ All the data below goes one after another. The rest of the chunk should be fille
     
         Type    Description
 
-        strn    Magic String. 4 byte "Morf" identifier.
+        byte[4] Magic String. 4 byte "Morf" identifier.
         dword   Number of keyframes.
         dword   Number of vertices.
         dword   Number of verices of triangles. Nfaces = Nverts / 3.
