@@ -62,16 +62,22 @@ def load_morf(filepath, divisor, shadesmooth):
         
         #print('Значений в таблице сдвигов:', counter)    
         return offsetsTable  
-        
-    def read_texture(data, offset, offsetend):
-        #it looks like Warcraft cuts the string to the first dot
-        #lets do the same
-        texture = get_strn(data, offset, offsetend) 
 
+    def set_material(obj, texture):
+        mat = bpy.data.materials.new(name='MRFMaterial')
+        mat.mrf_texture_props.texture_path = texture
+        obj.data.materials.append(mat)
+
+    def read_texture(data, offset, offsetend):
+        texture = get_strn(data, offset, offsetend) 
+        return texture
+    
+        #it looks like Warcraft cuts the string to the first dot
+        #we can do the same
         dot_index = texture.find('.')
         if dot_index != -1:
             texture = texture[:dot_index]
-        return texture
+
                 
     def read_faces(data, offset, fnumber):
         #triangles, 3 words each.
@@ -143,6 +149,7 @@ def load_morf(filepath, divisor, shadesmooth):
             bpy.ops.object.shade_smooth()
         
         create_shapeanim(obj, verts)
+        return obj
         
 
     def create_shapeanim(obj, verts):        
@@ -214,8 +221,8 @@ def load_morf(filepath, divisor, shadesmooth):
             #print(kf_counter)
         
         bpy.context.scene.render.fps = fps #спорно, но пусть будет    
-        create_mesh(keyframes, faces, uv, pivot, filename)  
-
+        obj = create_mesh(keyframes, faces, uv, pivot, filename)  
+        set_material(obj, texture)
         MessageBox.show(texture, "MRF Texture path:", 'TEXTURE')  
 
 
