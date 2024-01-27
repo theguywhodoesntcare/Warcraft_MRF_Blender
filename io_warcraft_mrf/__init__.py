@@ -89,7 +89,7 @@ class ExportMRFOperator(Operator, ExportHelper):
         layout.prop(self, 'scale_factor')
 
     def invoke(self, context, event):
-        if bpy.context.selected_objects:  # check if there is any selected object
+        if bpy.context.selected_objects:  #check if there is any selected object
             for obj in bpy.context.selected_objects:
                 if obj.type == 'MESH':
                     bpy.context.view_layer.objects.active = obj
@@ -101,7 +101,7 @@ class ExportMRFOperator(Operator, ExportHelper):
             MessageBox.show('Error!', 'No Object Selected', 'ERROR')
             return {'CANCELLED'}
 
-        return ExportHelper.invoke(self, context, event)  # open the export window
+        return ExportHelper.invoke(self, context, event) 
 
     def execute(self, context):
         obj = bpy.context.active_object  #get active object
@@ -131,7 +131,7 @@ class ExportMRFOperator(Operator, ExportHelper):
 
         # ===Get KF Range===
         kf_start = 0
-        kf_end = 24
+        kf_end = 23
         markers = bpy.context.scene.timeline_markers
 
         mrf_markers = [marker for marker in markers if marker.name.lower() == "mrf"]
