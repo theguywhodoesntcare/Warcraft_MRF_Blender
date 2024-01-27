@@ -7,7 +7,9 @@ I do not have access to the Warcraft source code and cannot know exactly all the
 
 # Description
 
-.mrf is a three-dimensional model format that contains one vertex animation. These models were used by Blizzard for Arthas' cape in the cinematic model of the battle between Arthas and Illidan.
+.mrf is a three-dimensional model format that contains one vertex animation. These models were used by Blizzard for Arthas' cape in the classic cinematic model of the battle between Arthas and Illidan.
+
+Speaking of Reforged, it seems that the correct render of the MRF is only possible in the classic version of the graphic (SD), while in the HD there are some troubles with blending.
 
 An array of triangles (faces), a UV Mapping and a path to a image texture are stored in the model as static data.
 The vertex data is divided into an array of keyframes. Each keyframe is represented as an array of coordinates and normals for each vertex. Keyframes replace each other at a given frequency, and the graphics engine interpolates the movement of the mesh between them.  
@@ -20,14 +22,17 @@ Here are examples in the table.
 | MRF (show)  | MRD (hide) | Path |
 |------|-------|-------|
 | MRFX**0000** | MRDX**0000** | *doodads\cinematic\arthasillidanfight\arthascape**0000**.mrf* |
-| MRFX**9999** | MRDX**9999** | *doodads\cinematic\arthasillidanfight\arthascape**9999**.mrf* |
 | MRFX**12345** | MRDX**12345** | *doodads\cinematic\arthasillidanfight\arthascape**12345**.mrf* |
 | MRFX**helloworld** | MRDX**helloworld** | *doodads\cinematic\arthasillidanfight\arthascape**helloworld**.mrf* |
 
 
-In the original Warcraft, there are two options to display the MRF model and play its animation:
-- Output a SPRITE frame using a camera from the MDX/MDL model.
+In the original Warcraft, there are three options to display the MRF model and play its animation:
+- Output a SPRITE frame using a camera from the MDX/MDL model. 
+*The global lighting model (DNC by default) from the current map is used as a light source.*
+
 - Native PlayModelCinematic(MDX/MDL model) function.  For example *PlayModelCinematic( "Doodads\\Cinematic\\ArthasIllidanFight\\ArthasIllidanFight.mdl" )*
+
+- Using a model as a unit portrait. The portrait space uses the mdx internal camera, so we can also see the MRF animation.
 
 # Data types 
 
@@ -87,7 +92,7 @@ It looks like this chunk should always start at offset 0x0040.
 An example of such a table is below. Offsets are indicated relative to the beginning of the chunk.
 #### Chunk structure
 
-        Offset  Description
+        Offset  Type  Description
 
         0x0000  It's always zeros. Maybe this means offset of the data chunk?
         0x0004  Offset of Texture Path

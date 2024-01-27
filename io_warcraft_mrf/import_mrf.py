@@ -177,21 +177,18 @@ def load_morf(filepath, divisor, shadesmooth):
             
     def read_file(data, offset, filename):
         kfnumber, offset = get_dword(data, offset)
-        print('Number of keyframes: ', kfnumber) #количество кадров
-        #значение этого dword равняется количеству значений в таблице сдвигов минус 4. 
+        print('Number of keyframes: ', kfnumber)
 
         vertexnumber, offset = get_dword(data, offset) 
-        print('Vertices Number: ', vertexnumber) #количество вершин
-        #используя это значение можно парсить вершины, не опасаясь получить нули
+        print('Vertices Number: ', vertexnumber)
         
         facesnumber, offset = get_dword(data, offset)
         facesnumber = facesnumber//3
-        print('Faces Number: ', facesnumber) #количество полигонов
-        #хранится число вершин, задействованных в треугольниках, то есть Nfaces * 3
+        print('Faces Number: ', facesnumber)
             
         time, offset = get_float(data, offset) 
         fps = round(1/time)
-        print('Frame Rate: ', fps, 'fps') #параметр равный фпс
+        print('Frame Rate: ', fps, 'fps') #1/fps
         #По умолчанию равно 1/30. Это время между кадрами в секундах при 30 fps
         
         pivot, offset = get_vector(data, offset) #это Pivot, или точка крепления, или что-то в этом роде

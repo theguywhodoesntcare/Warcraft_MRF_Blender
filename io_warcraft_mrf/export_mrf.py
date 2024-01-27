@@ -161,6 +161,8 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
 
 
     def get_mesh_data(obj):
+        #get the vertices of triangles!
+        #vertices with the same position, uv, and normal can be represented one time
         mesh = obj.data
         uv_layer = mesh.uv_layers.active.data
 
