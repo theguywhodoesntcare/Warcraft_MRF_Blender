@@ -92,7 +92,7 @@ All the data below goes one after another. The rest of the chunk should be fille
 | **dword** | Number of verices of triangles (loops or face corners). *(var nCorners)* |
 | **float** | Interval between frames or frame duration. In a sense, the parameter is inverse FPS (1/fps). |
 | **vector3** | (?) Presumably Pivot Point. Has no effect in game. |
-| **float** | (?) Presumably Bounds Radius. Has no effect in game. |
+| **float** | (?) Presumably Bounds Radius. Has no effect in screen space but but not sure about world space. |
 
 
 ## Offset Table
@@ -100,38 +100,38 @@ There are only dwords here.
 Each dword stores the offset of some chunk. The number of values equals the number of keyframes +4.  
 
 It looks like this chunk should always start at offset 0x0040.  
-An example of such a table is below. Offsets are indicated relative to the beginning of the chunk.
+
 #### Chunk structure
+| Type  | Description |
+|-------|-------|
+| **dword**  | It's always zeros (0x0000). Maybe this means offset of the data chunk?  |
+| **dword**  | Offset of Texture Path |
+| **dword**  | Offset of Face Data |
+| **dword**  | Offset of Mapping Data |
+| **dword**  | Offset of Keyframe 0 |
+|   | ...|
+| **dword**  | Offset of Keyframe **nKf - 1** |
 
-        Offset  Type  Description
-
-        0x0000  It's always zeros. Maybe this means offset of the data chunk?
-        0x0004  Offset of Texture Path
-        0x0008  Offset of Face Data
-        0x000C  Offset of Mapping Data
-        0x0010  Offset of Keyframe 0
-        ...
-        Similarly, the offsets of the next keyframes continue until the end (last keyframe).
 
 ## Texture Path
 Warcraft engine parses the string from the beginning of the chunk to the first dot character (.). 
 After the dot there may be zeros or any arbitrary data. Accordingly, the extension of the texture file is not required.
 #### Chunk structure
+| Type  | Description |
+|------|-------|
+| **strn** | Texture path  |
 
-        Type    Description
-
-        strn    Texture path
 
 ## Face Data
 Each face is represented as three words with vertex numbers. All faces go one after another.  
 We can get the number of faces from the data chunk.
 #### Chunk structure
+| Type  | Description |
+|------|-------|
+| **triangle** | face 0  |
+|  | ... |
+| **triangle** | face **nCorners / 3 - 1**   |
 
-        Type        Description
-
-        triangle    face 0 
-        ...
-        triangle    face N 
 
 ## Mapping Data
 U and V are stored for each vertex. We can represent this as vector2. 
@@ -139,25 +139,25 @@ The number of vertices is in the data chunk.
 **The coordinates must be mirrored along the Y axis *(v = 1 - v)***. At least when importing and exporting to Blender.
 
 #### Chunk structure
+| Type  | Description |
+|------|-------|
+| **vector2** | vertex 0 UV |
+|  | ... |
+| **vector2** | vertex **nVerts - 1** UV  |
 
-        Type        Description
-
-        vector2     vertex 0 UV
-        ...
-        vector2     vertex (nVerts - 1) UV
 
 ## Keyframe 
 The vector3 of the absolute (world) position of the vertex, and the vector3 of its normal in a given frame are stored here. Repeats for each vertex.  
 Each keyframe has its own chunk.
 #### Chunk structure
-        Type        Description
+| Type  | Description |
+|------|-------|
+| **vector3** | vertex 0 position |
+| **vector3** | vertex 0 normal |
+|  | ... |
+| **vector3** | vertex **nVerts - 1** position  |
+| **vector3** | vertex **nVerts - 1** normal  |
 
-        vector3     vertex 0 position 
-        vector3     vertex 0 normal 
-        ...
-        vector3     vertex N position 
-        vector3     vertex N normal 
-    
 
 
 
