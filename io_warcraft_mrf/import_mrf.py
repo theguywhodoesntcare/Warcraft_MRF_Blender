@@ -1,50 +1,18 @@
 import os
 import struct
 import bpy
+
+from .utils import *
+
 from mathutils import Vector
 from . import MessageBox
 
 def load_morf(filepath, divisor, shadesmooth):
     def get_magic(data):
-        #non-terminated string
+        #4 bytes
         magic_string = struct.unpack('4s', data[:4])[0].decode('utf-8')
         if  magic_string == 'Morf':
             return True
-        
-    def get_word(data, offset):
-        word, = struct.unpack_from('<H', data, offset)
-        offset += 2
-        return word, offset
-
-    def get_dword(data, offset):
-        dword, = struct.unpack_from('<I', data, offset)
-        offset += 4
-        return dword, offset
-
-    def get_float(data, offset):
-        float, = struct.unpack_from('<f', data, offset)
-        offset += 4
-        return float, offset
-
-    def get_strn(data, offset, offsetend):
-        strn = data[offset:offsetend].decode()
-        return strn
-
-    def get_vector(data, offset):
-        x, y, z = struct.unpack_from('<fff', data, offset)
-        offset += 12
-        return (x/divisor, y/divisor, z/divisor), offset
-
-    def get_triangle(data, offset):
-        word1, word2, word3 = struct.unpack_from('<HHH', data, offset)
-        offset += 6
-        return (word1, word2, word3), offset
-
-    def get_uv(data, offset):
-        u, v = struct.unpack_from('<ff', data, offset)
-        v = 1 - v #Mirror UV along the Y-axis
-        offset += 8
-        return (u, v), offset
 
     def read_offsetsTable(data, offset, kfsnumber):
         #number of frames taken as argument
@@ -70,7 +38,7 @@ def load_morf(filepath, divisor, shadesmooth):
 
     def read_texture(data, offset, offsetend):
         texture = get_strn(data, offset, offsetend) 
-        return texture
+        return texture #but we wont
     
         #it looks like Warcraft cuts the string to the first dot
         #we can do the same
@@ -103,13 +71,10 @@ def load_morf(filepath, divisor, shadesmooth):
     def read_vectors(data, offset, vnumber):
         #two vectors per vertex
         #first vector is position, second is normal
-        #squared values of the second vector are 1.0, which confirms that these are normals
-        #not sure if they can be used in a blender
 
-        #in default files, frame lengths are 4096 bytes
         vertices = []
         for i in range(vnumber*2):
-            vertex, offset = get_vector(data, offset)
+            vertex, offset = get_vector(data, offset, divisor)
             if i % 2 == 0:  #skip normals
                 vertices.append(vertex)
             
@@ -134,7 +99,9 @@ def load_morf(filepath, divisor, shadesmooth):
                 loop = mesh.loops[loop_index]
                 uv_layer.data[loop.index].uv = uv[loop.vertex_index]
         
-        #set pivot      
+        """
+        set origin (pivot point)     
+        
         cursor_location = Vector(bpy.context.scene.cursor.location)
         
         bpy.ops.object.select_all(action='DESELECT')
@@ -144,6 +111,10 @@ def load_morf(filepath, divisor, shadesmooth):
         bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
         
         bpy.context.scene.cursor.location = cursor_location
+        """
+        #This makes some sense, but if later we want to export the mesh again to the MRF format, 
+        #then it will shift by the difference between the world center of coordinates and the Origin. 
+        #So it's not worth it.
 
         if shadesmooth:
             bpy.ops.object.shade_smooth()
@@ -189,17 +160,14 @@ def load_morf(filepath, divisor, shadesmooth):
         time, offset = get_float(data, offset) 
         fps = round(1/time)
         print('Frame Rate: ', fps, 'fps') #1/fps
-        #По умолчанию равно 1/30. Это время между кадрами в секундах при 30 fps
+        #in Arthas' cape it is equal to 1/30 seconds
         
-        pivot, offset = get_vector(data, offset) #это Pivot, или точка крепления, или что-то в этом роде
-        #пока использую как Origin, дальше посмотрим
-        #не оказывает влияния в игре
-        print('Pivot Point: ', pivot)
+        pivot, offset = get_vector(data, offset, divisor) 
+        print('Pivot Point: ', pivot) #(?)
         
-        bounds, offset = get_float(data, offset) #непонятно что, но по значению похоже на bounds radius
-        #не оказывает влияния в игре
+        bounds, offset = get_float(data, offset) 
         bounds = bounds/divisor
-        print('Bounds Radius: ', bounds)
+        print('Bounds Radius: ', bounds) #(?)
         
         #на 0x0040 (64) сдвиге начинается таблица сдвигов.   
         offsets = read_offsetsTable(data, 64, kfnumber)
@@ -228,6 +196,6 @@ def load_morf(filepath, divisor, shadesmooth):
         data = file.read()
         filename = os.path.splitext(os.path.basename(filepath))[0]
         if get_magic(data):
-            print('Loading Morf file...')
+            print('\nLoading Morf file...')
             read_file(data, 4, filename)
-        
+            print("The Morf file has been successfully loaded!\n")

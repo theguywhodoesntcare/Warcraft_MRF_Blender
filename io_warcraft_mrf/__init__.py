@@ -1,12 +1,12 @@
 bl_info = {
     "name": "Warcraft MORF (.mrf) Importer",
     "author": "poisoNDealer",
-    "version": (0, 2),
+    "version": (0, 2, 1),
     "blender": (3, 6, 2),
     "location": "File > Import > Warcraft MORF (.mrf), File > Export > Warcraft MORF (.mrf)",
-    "description": "Imports Warcraft .mrf files and reproduces their animations using Shape Keys.\nExports the selected mesh from the Blender scene to Warcraft .mrf format.",
-    "warning": "",
-    "wiki_url": "",
+    "description": "Imports Warcraft .mrf files and reproduces their animations using Shape Keys. Exports the selected mesh from the Blender scene to Warcraft .mrf format.",
+    "doc_url": "https://github.com/theguywhodoesntcare/Warcraft_MRF_Blender",
+    "tracker_url": "https://github.com/theguywhodoesntcare/Warcraft_MRF_Blender",
     "category": "Import-Export",
 }
 
@@ -22,6 +22,8 @@ class MessageBox:
             self.layout.label(text=message)
 
         bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+        print(f"{title} {message}")
+
 
 from . import import_mrf
 from . import export_mrf
@@ -59,7 +61,6 @@ class ImportMRFOperator(Operator, ImportHelper):
         layout.prop(self, 'shade_smooth')
 
     def execute(self, context):
-        #print(f"Selected file: {self.filepath}")
         import_mrf.load_morf(self.filepath, self.divisor, self.shade_smooth)
         return {'FINISHED'}
 
@@ -68,18 +69,11 @@ class ExportMRFOperator(Operator, ExportHelper):
     bl_label = "Export MRF"
     filename_ext = ".mrf"
     default_texture = r'Textures/white'
+    kf_start = 0
+    kf_end = 23
 
-    filter_glob: bpy.props.StringProperty(
-        default="*.mrf",
-        options={'HIDDEN'},
-    )
-
-    scale_factor: bpy.props.FloatProperty(
-        name="Scale Factor",
-        description="The scale factor of the exported model",
-        default=50,
-        min = 0.01
-    )
+    filter_glob: bpy.props.StringProperty(default="*.mrf", options={'HIDDEN'})
+    scale_factor: bpy.props.FloatProperty(name="Scale Factor", description="The scale factor of the exported model", default=50, min=0.01)
 
     def draw(self, context):
         layout = self.layout
@@ -89,69 +83,44 @@ class ExportMRFOperator(Operator, ExportHelper):
         layout.prop(self, 'scale_factor')
 
     def invoke(self, context, event):
-        if bpy.context.selected_objects:  #check if there is any selected object
-            for obj in bpy.context.selected_objects:
-                if obj.type == 'MESH':
-                    bpy.context.view_layer.objects.active = obj
-                    #bpy.ops.object.mode_set(mode='EDIT')
-                else:
-                    MessageBox.show('Error!', 'One or more selected objects are not a Mesh', 'ERROR')
-                    return {'CANCELLED'}
-        else:
-            MessageBox.show('Error!', 'No Object Selected', 'ERROR')
+        if not bpy.context.selected_objects or not any(obj.type == 'MESH' for obj in bpy.context.selected_objects):
+            MessageBox.show('Error!', 'No Mesh Object Selected.', 'ERROR')
             return {'CANCELLED'}
 
         return ExportHelper.invoke(self, context, event) 
 
     def execute(self, context):
-        obj = bpy.context.active_object  #get active object
+        obj = bpy.context.active_object
+        if not obj or obj.type != 'MESH':
+            MessageBox.show('Error!', 'No Active Mesh Object.', 'ERROR')
+            return {'CANCELLED'}
 
-        if obj and obj.type == 'MESH':
-            bpy.context.view_layer.objects.active = obj
-            #bpy.ops.object.mode_set(mode='EDIT')
-        else:
-            MessageBox.show('Error!', 'No Active Object or Object type is not a Mesh', 'ERROR')
-            return
+        texture_path = self.get_texture_path()
+        kf_start, kf_end = self.get_kf_range()
 
-        # ===Get Texture Path===
-        mat = bpy.context.object.active_material
-        texture_path = ExportMRFOperator.default_texture
-
-        def texture_warning():
-            MessageBox.show(f"The path {ExportMRFOperator.default_texture} has been set", 'Texture path not found. Set the MRF texture path', 'ERROR')
-        
-        if mat is not None:
-            if len(mat.mrf_texture_props.texture_path) > 0:
-                texture_path = mat.mrf_texture_props.texture_path
-                texture_path = r"{}".format(texture_path)
-            else:
-                texture_warning()
-        else:
-            texture_warning()
-
-        # ===Get KF Range===
-        kf_start = 0
-        kf_end = 23
-        markers = bpy.context.scene.timeline_markers
-
-        mrf_markers = [marker for marker in markers if marker.name.lower() == "mrf"]
-
-        if len(mrf_markers) >= 2:
-            mrf_markers.sort(key=lambda marker: marker.frame)
-            kf_start = mrf_markers[0].frame
-            kf_end = mrf_markers[1].frame
-        else:
-            MessageBox.show(f"Default Keyframe Range {kf_start} — {kf_end} has been set", 'MRF Markers not found!', 'ERROR')
-
-        print(kf_start)
-        print(kf_end)        
         export_mrf.save_morf(self.filepath, obj, self.scale_factor, texture_path, (kf_start, kf_end))
         
         return {'FINISHED'}
 
+    def get_texture_path(self):
+        mat = bpy.context.object.active_material
+        if mat and len(mat.mrf_texture_props.texture_path) > 0:
+            return r"{}".format(mat.mrf_texture_props.texture_path)
+        
+        MessageBox.show(f"The path {self.default_texture} has been set", 'Texture path not found. Set the MRF texture path', 'ERROR')
+        return self.default_texture
 
-def update_texture_path(self, context):
-    print("Texture path updated to", self.texture_path)
+    def get_kf_range(self):
+        kf_start, kf_end = self.kf_start, self.kf_end
+        mrf_markers = [marker for marker in bpy.context.scene.timeline_markers if marker.name.lower() == "mrf"]
+
+        if len(mrf_markers) >= 2:
+            mrf_markers.sort(key=lambda marker: marker.frame)
+            kf_start, kf_end = mrf_markers[0].frame, mrf_markers[1].frame
+        else:
+            MessageBox.show(f"Default Keyframe Range {kf_start} — {kf_end} has been set", 'MRF Markers not found!', 'ERROR')
+
+        return kf_start, kf_end
 
 class MRFTextureProperties(bpy.types.PropertyGroup):
     texture_path: bpy.props.StringProperty(
@@ -160,7 +129,6 @@ class MRFTextureProperties(bpy.types.PropertyGroup):
         default="",
         maxlen=1024,
         subtype='NONE',
-        update=update_texture_path
     )
 
 class MATERIAL_PT_mrf_texture(bpy.types.Panel):

@@ -17,8 +17,8 @@ Use the **Divider** property as a scaling factor (original size will be reduced)
 **Highly experimental!**  
 Animation of mesh can be exported as .mrf.  
 For exporting: 
-1. **Create any mesh animation**. For example, this could be an animation of Shape Keys or a Physics Simulation. It is very advisable to immediately **triangulate the mesh**.
-2. If you are using physics simulation, then **create an animation cache before exporting (Cache -> Bake).**
+1. **Create any mesh animation**. For example, this could be an animation of Shape Keys or a Cloth Simulation. It is very advisable to immediately **triangulate the mesh**.
+2. If you are using cloth simulation, then **create an animation cache before exporting (Cache -> Bake).**
 3. **Set the frame rate (Output Properties -> Frame Rate)**. This value will be used in the mrf file, 30 FPS is recommended.
 4. **Place two markers on the timeline with the names “mrf”** (Hotkey M to add a marker, F2 to rename). The animation between and inclusive of these two markers will be exported. By default, if there are no markers, the animation between frames 0 and 23 inclusive will be exported.
 5. **Set the path to the texture (Material Properties -> MRF Texture Scroll -> Path Property)**. By default, if there is no texture path, the "Textures/white" path will be used.

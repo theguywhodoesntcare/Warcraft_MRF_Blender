@@ -2,60 +2,14 @@ import os
 import struct
 import bpy
 import bmesh
+
+from .utils import *
 from mathutils import Vector, geometry
 from . import MessageBox
 #os.system('cls')
 
 def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
-    def set_dword(data, value):
-        data.extend(struct.pack('<I', value))
-        return data
-
-    def set_float(data, value):
-        data.extend(struct.pack('<f', value))
-        return data
-
-    def set_str(data, value):
-        b = value.encode('utf-8')
-        data.extend(struct.pack('%ds' % len(b), b))
-        return data
-
-    def set_vector(data, vector):
-        data.extend(struct.pack('<fff', *vector))
-        return data
-
-    def set_triangle(data, triangle):
-        data.extend(struct.pack('<HHH', *triangle))
-        return data
-
-    def set_uv(data, uv):
-        u, v = uv
-        v = 1 - v  #mirror Y
-        data.extend(struct.pack('<ff', u, v))
-        return data
-
-
-    def pad_chunk(data):
-        #Fill the chunk with zeros so that its length is a multiple of 16
-        padding = 16 - (len(data) % 16)
-        
-        if padding == 16:
-            return data
-
-        data.extend([0]*padding)
-        return data
-
-    def pad_chunk_size(data, chunk_size):
-        #Fill the chunk with zeros so that its size is equal to the specified size
-        padding = chunk_size - (len(data) % chunk_size)
-        
-        if padding == chunk_size:
-            return data
-
-        data.extend([0]*padding)
-        return data
-
-    def write_data_chunk(data, nkeyframes, nverts, nfaces, duration):
+    def write_header(data, nkeyframes, nverts, nfaces, duration):
         set_str(data, 'Morf') #mrf id
         set_dword(data, nkeyframes) #Number of keyframes
         set_dword(data, nverts) #Number of vertices
@@ -78,6 +32,8 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
         number = frame_end - frame_start + 1
 
         sce = bpy.context.scene
+        user_frame = sce.frame_current #return to last position after loop
+
         animdata = bytearray()
 
         for f in range(frame_start, frame_end + 1):  #set frame range
@@ -104,11 +60,12 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
             
             obj.evaluated_get(depsgraph).to_mesh_clear()
             
-        fps = bpy.context.scene.render.fps #get fps
+        fps = sce.render.fps #get fps
         dur = 1/fps
 
         length = len(animdata)//number
-        print('frame length: ', length)
+
+        sce.frame_set(user_frame)
         return animdata, number, dur, length
     
     def write_faces(faces):
@@ -206,7 +163,7 @@ def save_morf(filepath, obj, scale_factor, texture_path, kf_range):
     data_list = [offsettable, texturedata, facesdata, uvdata, animdata]
     
     mrfdata = bytearray()  
-    mrfdata = write_data_chunk(mrfdata, kfcount, nvertices, nfaces, duration)
+    mrfdata = write_header(mrfdata, kfcount, nvertices, nfaces, duration)
     
     for data in data_list:
         mrfdata.extend(data)
