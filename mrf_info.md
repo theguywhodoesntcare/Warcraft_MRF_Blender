@@ -14,6 +14,8 @@ Speaking of Reforged, it seems that the correct render of the MRF is only possib
 An array of triangles (faces), a UV Mapping and a path to a image texture are stored in the model as static data.
 The vertex data is divided into an array of keyframes. Each keyframe is represented as an array of coordinates and normals for each vertex. Keyframes replace each other at a given frequency, and the graphics engine interpolates the movement of the mesh between them.  
 
+It looks like MRF only supports one static texture without blending. Transparent pixels are rendered as black. 
+
 # Import description
 
 MRF files are linked to the MDX/MDL model through tracks of Event Objects (EVTS) with ***MRF*** (for example MRFx0000) and ***MRD*** (for example MRDx0000) identifiers.
@@ -33,7 +35,7 @@ Since the link to the mrf is part of the MDX/MDL, theoretically MRF can be playe
 
 There are three options to display the MRF model and play its animation:
 - Output a SPRITE frame using a camera from the MDX/MDL model. 
-*The global lighting model (DNC by default) from the current map is used as a light source.*
+*The global lighting model (DNC with Directional light by default) from the current map is used as a light source.*
 
 - Native PlayModelCinematic(MDX/MDL model) function.  For example *PlayModelCinematic( "Doodads\\Cinematic\\ArthasIllidanFight\\ArthasIllidanFight.mdl" )*
 
@@ -53,7 +55,7 @@ At the same time, MRF will not inherit the coordinates of the MDX model, that is
 | **word** | 2 byte integer (Little-Endian) |
 | **dword** | 4 byte integer (Little-Endian) |
 | **float** | 4 byte floating point number (Little-Endian) |
-| **strn** | string (not null-terminated)|
+| **str** | string (not null-terminated)|
 
 ### Derived data types
 | Name  | Description |
@@ -66,10 +68,10 @@ At the same time, MRF will not inherit the coordinates of the MDX model, that is
 
 # Chunk Array
 The structure of chunks is linear, that is, they simply follow each other. Chunk do not have any identifiers, their offsets are stored in the offsets table.  
-**Chunk lengths must be a multiple of 16**.  
+**Chunk lengths should be a multiple of 16**. Any remaining space can be padded with zeros.
 
 
-- Data Chunk (Offset 0x0000) 
+- Header (Offset 0x0000) 
 - Offset Table (Offset 0x0040 or 64) 
 - Texture Path
 - Face Data
@@ -80,9 +82,9 @@ The structure of chunks is linear, that is, they simply follow each other. Chunk
 
 # Chunks Description
 
-## Data Chunk
-If I understand correctly, it should have a fixed size of 64. 
-All the data below goes one after another. The rest of the chunk should be filled with zeros or any other arbitrary data.  
+## Header
+Header contains the magic id and the 3D model specification. If I understand correctly, it should have a fixed size of 64. 
+
 #### Chunk structure
 | Type  | Description |
 |------|-------|
@@ -92,7 +94,8 @@ All the data below goes one after another. The rest of the chunk should be fille
 | **dword** | Number of verices of triangles (loops or face corners). *(var nCorners)* |
 | **float** | Interval between frames or frame duration. In a sense, the parameter is inverse FPS (1/fps). |
 | **vector3** | (?) Presumably Pivot Point. Has no effect in game. |
-| **float** | (?) Presumably Bounds Radius. Has no effect in screen space but but not sure about world space. |
+| **float** | (?) Presumably Bounds Radius. Has no effect in screen space but not sure about world space. |
+| **byte[28]** | 0x00 or any other arbitrary data |
 
 
 ## Offset Table
@@ -104,7 +107,7 @@ It looks like this chunk should always start at offset 0x0040.
 #### Chunk structure
 | Type  | Description |
 |-------|-------|
-| **dword**  | It's always zeros (0x0000). Maybe this means offset of the data chunk?  |
+| **dword**  | It's always zeros (0x0000). Maybe this means offset of the Header?  |
 | **dword**  | Offset of Texture Path |
 | **dword**  | Offset of Face Data |
 | **dword**  | Offset of Mapping Data |
@@ -119,12 +122,12 @@ After the dot there may be zeros or any arbitrary data. Accordingly, the extensi
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **strn** | Texture path  |
+| **str** | Texture path  |
 
 
 ## Face Data
 Each face is represented as three words with vertex numbers. All faces go one after another.  
-We can get the number of faces from the data chunk.
+We can get the number of faces from the Header.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
@@ -135,7 +138,7 @@ We can get the number of faces from the data chunk.
 
 ## Mapping Data
 U and V are stored for each vertex. We can represent this as vector2. 
-The number of vertices is in the data chunk.  
+The number of vertices is in the Header.  
 **The coordinates must be mirrored along the Y axis *(v = 1 - v)***. At least when importing and exporting to Blender.
 
 #### Chunk structure
@@ -157,8 +160,3 @@ Each keyframe has its own chunk.
 |  | ... |
 | **vector3** | vertex **nVerts - 1** position  |
 | **vector3** | vertex **nVerts - 1** normal  |
-
-
-
-
-
