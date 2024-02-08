@@ -35,7 +35,7 @@ Since the link to the mrf is part of the MDX/MDL, theoretically MRF can be playe
 
 There are three options to display the MRF model and play its animation:
 - Output a SPRITE frame using a camera from the MDX/MDL model. 
-*The global lighting model (DNC with Directional light by default) from the current map is used as a light source.*
+*If a world frame is used as the parent, then the global lighting model (DNC with default directional light) from the current map will be used as the light source.*
 
 - Native PlayModelCinematic(MDX/MDL model) function.  For example *PlayModelCinematic( "Doodads\\Cinematic\\ArthasIllidanFight\\ArthasIllidanFight.mdl" )*
 
@@ -76,14 +76,14 @@ The structure of chunks is linear, that is, they simply follow each other. Chunk
 - Texture Path
 - Face Data
 - Mapping Data
-- Keyframe 0
+- Keyframe 0 (first)
 - ...
-- Keyframe N
+- Keyframe N (last)
 
 # Chunks Description
 
 ## Header
-Header contains the magic id and the 3D model specification. If I understand correctly, it should have a fixed size of 64. 
+Header contains the magic id and the 3D model specification. It should have a fixed size of 64 bytes.
 
 #### Chunk structure
 | Type  | Description |
@@ -92,7 +92,7 @@ Header contains the magic id and the 3D model specification. If I understand cor
 | **dword** | Number of keyframes. *(var nKf)* |
 | **dword** | Number of vertices. *(var nVerts)* |
 | **dword** | Number of verices of triangles (loops or face corners). *(var nCorners)* |
-| **float** | Interval between frames or frame duration. In a sense, the parameter is inverse FPS (1/fps). |
+| **float** | Interval between frames or frame duration in seconds. In a sense, the parameter is inverse FPS (1/fps). |
 | **vector3** | (?) Presumably Pivot Point. Has no effect in game. |
 | **float** | (?) Presumably Bounds Radius. Has no effect in screen space but not sure about world space. |
 | **byte[28]** | 0x00 or any other arbitrary data |
@@ -111,9 +111,9 @@ It looks like this chunk should always start at offset 0x0040.
 | **dword**  | Offset of Texture Path |
 | **dword**  | Offset of Face Data |
 | **dword**  | Offset of Mapping Data |
-| **dword**  | Offset of Keyframe 0 |
-|   | ...|
-| **dword**  | Offset of Keyframe **nKf - 1** |
+| **dword[nKf]**  | Offsets of keyframes. Starting from keyframe 0 and ending with keyframe **nKf - 1** |
+| **byte[]** | Padding to next 16-byte boundary |
+
 
 
 ## Texture Path
@@ -123,6 +123,7 @@ After the dot there may be zeros or any arbitrary data. Accordingly, the extensi
 | Type  | Description |
 |------|-------|
 | **str** | Texture path  |
+| **byte[]** | Padding to next 16-byte boundary |
 
 
 ## Face Data
@@ -131,9 +132,8 @@ We can get the number of faces from the Header.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **triangle** | face 0  |
-|  | ... |
-| **triangle** | face **nCorners / 3 - 1**   |
+| **triangle[nCorners / 3]** | Face (3 vertex IDs). Starting from face 0 and ending with face **nCorners / 3 - 1**  |
+| **byte[]** | Padding to next 16-byte boundary |
 
 
 ## Mapping Data
@@ -144,9 +144,9 @@ The number of vertices is in the Header.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **vector2** | vertex 0 UV |
-|  | ... |
-| **vector2** | vertex **nVerts - 1** UV  |
+| **vector2[nVerts]** | Vertex UV coordinates. Starting from vertex 0 and ending with vertex **nVerts - 1** |
+| **byte[]** | Padding to next 16-byte boundary |
+
 
 
 ## Keyframe 
@@ -155,8 +155,5 @@ Each keyframe has its own chunk.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **vector3** | vertex 0 position |
-| **vector3** | vertex 0 normal |
-|  | ... |
-| **vector3** | vertex **nVerts - 1** position  |
-| **vector3** | vertex **nVerts - 1** normal  |
+| **(vector3, vector3)[nVerts]** | Vertex position and vertex normal. Starting from vertex 0 and ending with vertex **nVerts - 1** |
+| **byte[]** | Padding to next 16-byte boundary |
