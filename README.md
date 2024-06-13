@@ -14,6 +14,8 @@ Made for Blender 3.6.2., tested also at 4.0.1
 Use the operator **File -> Import -> Warcraft MORF (.mrf)**.  
 Use the **Divider** property as a scaling factor (original size will be reduced). Enable smoothing if necessary. Morf animation will be imported as Shape Keys animation. Video is [here](https://youtu.be/AjGNrNym91g).
 # Export
+[<img src="images/preview.png">](https://youtu.be/OASOFjb8a4Q)
+
 **Highly experimental!**  
 Animation of mesh can be exported as .mrf.  
 For exporting: 
