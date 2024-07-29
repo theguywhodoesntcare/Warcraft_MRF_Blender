@@ -52,8 +52,8 @@ At the same time, MRF will not inherit the coordinates of the MDX model, that is
 | Name  | Description |
 |------|-------|
 | **byte** | 1 byte |
-| **word** | 2 byte integer (Little-Endian) |
-| **dword** | 4 byte integer (Little-Endian) |
+| **word** | 2 byte unsigned integer (Little-Endian) |
+| **dword** | 4 byte unsigned integer (Little-Endian) |
 | **float** | 4 byte floating point number (Little-Endian) |
 | **str** | string (not null-terminated)|
 
