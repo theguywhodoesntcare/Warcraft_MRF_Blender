@@ -3,7 +3,7 @@ Import and export Warcraft MRF files into Blender. The six original files can be
 
 ![](images/mrfpath.png)
 
-**Some details about this model format and the specification of binary data can be found in the [mrf_info.md](mrf_info.md) file.
+**Some details about this model format and the specification of binary data can be found in the [mrf_info.md](mrf_info.md) and [mrf_spec.md](mrf_spec.md) files respectively.
 Examples of using custom .mrf files can be found in the [test folder](test).**
 
 # Install
