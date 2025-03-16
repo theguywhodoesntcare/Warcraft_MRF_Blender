@@ -41,36 +41,36 @@ Header contains the magic id and the 3D model specification. It should have a fi
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **byte[4]** | Magic String. 4 byte "Morf" identifier |
-| **uint32** | Number of keyframes. *(var nKf)* |
-| **uint32** | Number of vertices. *(var nVerts)* |
-| **uint32** | Number of verices of triangles (loops or face corners). *(var nCorners)* |
+| **byte[4]** | Magic string `Morf`, represented as ASCII bytes: `4D 6F 72 66` |
+| **uint32** | Number of keyframes (used as `nKf`) |
+| **uint32** | Number of vertices (used as `nVerts`) |
+| **uint32** | Number of vertices of triangles (loops or face corners) (used as `nCorners`) |
 | **float** | Interval between frames or frame duration in seconds. In a sense, the parameter is inverse FPS (1/fps) |
 | **vector3** | (?) Presumably Pivot Point. Has no effect in game |
 | **float** | (?) Presumably Bounds Radius. Has no effect in screen space but not sure about world space |
-| **byte[28]** | Unused. Can contain 0x00 or any other arbitrary data |
+| **byte[28]** | Unused. Can contain `0x00` or any other arbitrary data |
 
 
 ## Offset Table
-There are only uint32 here.  
-Each uint32 stores the offset of some chunk. The number of values equals the number of keyframes +4.  
+There are only `uint32` here.  
+Each `uint32` stores the offset of some chunk. The number of values equals the number of keyframes +4.  
 
-It looks like this chunk should always start at offset 0x0040.  
+It looks like this chunk should always start at offset `0x0040`.  
 
 #### Chunk structure
 | Type  | Description |
 |-------|-------|
-| **uint32**  | It's always zeros (0x0000). Maybe this means offset of the Header?  |
+| **uint32**  | Always 0 (``0x0000``). Possibly placeholder for a Header offset  |
 | **uint32**  | Offset of Texture Path |
 | **uint32**  | Offset of Face Data |
 | **uint32**  | Offset of Mapping Data |
-| **uint32[nKf]**  | Offsets of keyframes. Starting from keyframe 0 and ending with keyframe **nKf - 1** |
+| **uint32[nKf]**  | Offsets of keyframes. Starting from keyframe `0` and ending with keyframe `nKf - 1` |
 | **byte[]** | Padding to align to the next 16-byte boundary (if necessary) |
 
 
 
 ## Texture Path
-Warcraft engine parses the string from the beginning of the chunk to the first dot character (.). 
+Warcraft engine parses the string from the beginning of the chunk to the first dot character (`.`). 
 After the dot there may be zeros or any arbitrary data. Accordingly, the extension of the texture file is not required.
 #### Chunk structure
 | Type  | Description |
@@ -84,19 +84,20 @@ Each face is represented as three uint16 with vertex numbers. All faces go one a
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **triangle[nCorners / 3]** | Face (3 vertex IDs). Starting from face 0 and ending with face **nCorners / 3 - 1**  |
+| **triangle[nCorners / 3]** | Face (3 vertex IDs). Starting from face `0` and ending with face `nCorners / 3 - 1`  |
 | **byte[]** | Padding to align to the next 16-byte boundary (if necessary) |
 
 
 ## Mapping Data
 U and V are stored for each vertex. We can represent this as vector2. 
-The number of vertices is in the Header.  
-**The V coordinate of the UV mapping is inverted in Warcraft 3 *(v = 1 - v)***.
+The number of vertices is in the Header. 
+
+**Note**: The V coordinate is flipped (`v = 1 - v`), following the DirectX UV convention.
 
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **vector2[nVerts]** | Vertex UV coordinates. Starting from vertex 0 and ending with vertex **nVerts - 1** |
+| **vector2[nVerts]** | Vertex UV coordinates. Starting from vertex `0` and ending with vertex `nVerts - 1` |
 | **byte[]** | Padding to align to the next 16-byte boundary (if necessary) |
 
 
@@ -107,5 +108,5 @@ Each keyframe has its own chunk. The number of keyframes is in the Header.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **(vector3, vector3)[nVerts]** | Vertex position and vertex normal. Starting from vertex 0 and ending with vertex **nVerts - 1** |
+| **(vector3, vector3)[nVerts]** | Vertex position and vertex normal. Each vertex stores a position followed by its normal, in an interleaved layout. Starting from vertex `0` and ending with vertex `nVerts - 1` |
 | **byte[]** | Padding to align to the next 16-byte boundary (if necessary) |
