@@ -22,9 +22,17 @@
 # Chunk Structure
 The file consists of a header followed by multiple logical chunks, stored sequentially. Chunks do not have explicit identifiers or length fields; their locations are determined by offsets defined in the header.
 
-**Chunks are typically aligned to 16-byte boundaries. Padding with zeros to reach alignment is strongly recommended if a chunk’s length is not already a multiple of 16 bytes, although the game parser itself does not enforce this requirement.**
+> **Note:** These "chunks" are a logical abstraction used in this specification for clarity.
+> In the actual implementation, the original game parser does not treat the file as containing separate chunks. It parses the header, then directly accesses other sections using hardcoded offsets and pointer arithmetic. There is no runtime detection or validation of individual sections.
+
+Although the game parser does not require chunk alignment, all known official `.mrf` files include zero-padding to align each logical chunk to a 16-byte boundary. This padding likely originates from the internal exporter used in development, possibly to match memory alignment requirements on 32-bit platforms.
+
+While not strictly required for correct parsing, preserving 16-byte alignment is recommended for compatibility with original data.
+
+The logical structure is as follows:
 
 - Header
+- Keyframe Offsets Table
 - Texture Path
 - Face Data
 - Mapping Data
@@ -35,26 +43,36 @@ The file consists of a header followed by multiple logical chunks, stored sequen
 # Chunks Description
 
 ## Header
-Header contains the magic id, 3D model specification and offsets of chunks.
+Header contains the magic ID, 3D model metadata, and offsets to fixed sections of the file.
+
+The original game parser treats only the first `80` bytes of the file as the binary header — this portion is copied directly into memory. The remaining fields (specifically the array of keyframe offsets) are read manually using pointer arithmetic, rather than as part of a defined structure.
 
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **byte[4]** | Magic string `Morf`, represented as ASCII bytes: `4D 6F 72 66` |
+| **byte[4]** | Magic string `Morf`, represented as ASCII bytes: `4D 6F 72 66`. Although the `magicId` is present and read, it is **not** validated by the original game parser |
 | **uint32** | Number of keyframes (used as `nFrames`) |
 | **uint32** | Number of vertices (used as `nVerts`) |
 | **uint32** | Number of face indices (used as `nIndices`) |
-| **float** | ``frameDuration``. Interval between frames or frame duration in seconds |
-| **vector3** | Pivot point. Has no effect in game |
-| **float** | Bounds radius. Has no effect in game |
-| **float** | Elapsed Time. Animation playback offset in seconds. Defines how far into the animation playback begins. Must satisfy ``0.0 <= elapsedTime <= (nFrames - 1) × frameDuration``
+| **float** | ``frameDuration``. Interval between frames or frame duration in seconds. Inverted frame rate |
+| **vector3** | Pivot point. Read and stored, but has no effect in-game |
+| **float** | Bounds radius. Read and stored, but has no effect in-game |
+| **float** | Elapsed Time. Initial playback time in seconds. Defines when the animation starts. Negative values delay playback; positive values begin playback from a specific offset. Values exceeding `(nFrames - 1) × frameDuration` are clamped to the end of the animation and result in the final keyframe being displayed without interpolation
 | **uint32** | Debug flag. Reserved for internal development use. Should be ``0``. Non-zero values may trigger assertions or debug checks in development builds, but have no effect in retail versions
 | **uint32[6]** | Ignored. Can contain any arbitrary data, typically zeros |
-| **uint32**  | Offset of Texture Path |
-| **uint32**  | Offset of Face Data |
-| **uint32**  | Offset of Mapping Data |
-| **uint32[nFrames]**  | Offsets of keyframes. Starting from keyframe `0` and ending with keyframe `nFrames - 1` |
-| **byte[]** | Padding to align to the next 16-byte boundary (if necessary) |
+| **uint32**  | Offset of [Texture Path](#texture-path) relative to the beginning of the file |
+| **uint32**  | Offset of [Face Data](#face-data) relative to the beginning of the file |
+| **uint32**  | Offset of [Mapping Data](#mapping-data) relative to the beginning of the file |
+
+## Keyframe Offsets Table
+
+Immediately following the Header is a table of offsets, one per keyframe. Each entry is a `uint32` pointing to the start of a keyframe block, relative to the beginning of the file. The number of keyframes is in the [Header](#header).
+
+#### Chunk structure
+| Type         | Description |
+|--------------|-------------|
+| **uint32[nFrames]** | Array of [Keyframe](#keyframe) offsets. Starting from offset of keyframe `0` and ending with offset of keyframe `nFrames - 1` |
+| **byte[]**    | Padding to align to 16-byte boundary (if necessary) |
 
 ## Texture Path
 Warcraft engine parses the string from the beginning of the chunk to the first dot character (`.`). 
