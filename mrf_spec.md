@@ -45,19 +45,19 @@ The logical structure is as follows:
 ## Header
 Header contains the magic ID, 3D model metadata, and offsets to fixed sections of the file.
 
-The original game parser treats only the first `80` bytes of the file as the binary header — this portion is copied directly into memory. The remaining fields (specifically the array of keyframe offsets) are read manually using pointer arithmetic, rather than as part of a defined structure.
+The original game parser treats only the first `80` bytes of the file as the binary header — this portion is copied directly into memory. The remaining fields are read manually using pointer arithmetic, rather than as part of a defined structure.
 
 #### Chunk structure
 | Type  | Description |
 |------|-------|
-| **byte[4]** | Magic string `Morf`, represented as ASCII bytes: `4D 6F 72 66`. Although the `magicId` is present and read, it is **not** validated by the original game parser |
+| **byte[4]** | Magic string `Morf`, represented as ASCII bytes: `4D 6F 72 66`. Although this field is read by the parser, its value is **not validated**. In practice, any 4-byte sequence is accepted without issue |
 | **uint32** | Number of keyframes (used as `nFrames`) |
 | **uint32** | Number of vertices (used as `nVerts`) |
 | **uint32** | Number of face indices (used as `nIndices`) |
-| **float** | ``frameDuration``. Interval between frames or frame duration in seconds. Inverted frame rate |
+| **float** | ``frameDuration``. Time between frames in seconds. Inverted frame rate. Must be greater than `0` for correct playback. A value of `0` results in the model not being rendered, while a negative value causes the animation to display only the last keyframe|
 | **vector3** | Pivot point. Read and stored, but has no effect in-game |
 | **float** | Bounds radius. Read and stored, but has no effect in-game |
-| **float** | Elapsed Time. Initial playback time in seconds. Defines when the animation starts. Negative values delay playback; positive values begin playback from a specific offset. Values exceeding `(nFrames - 1) × frameDuration` are clamped to the end of the animation and result in the final keyframe being displayed without interpolation
+| **float** | Elapsed Time. Initial playback time in seconds. Defines when the animation starts. Negative values delay playback; positive values begin playback from a specific offset. Values exceeding `(nFrames - 1) × frameDuration` causes the animation to display only the last keyframe
 | **uint32** | Debug flag. Reserved for internal development use. Should be ``0``. Non-zero values may trigger assertions or debug checks in development builds, but have no effect in retail versions
 | **uint32[6]** | Ignored. Can contain any arbitrary data, typically zeros |
 | **uint32**  | Offset of [Texture Path](#texture-path) relative to the beginning of the file |
