@@ -58,7 +58,7 @@ The original game parser treats only the first `80` bytes of the file as the bin
 | **vector3** | Pivot point. Read and stored, but has no effect in-game |
 | **float** | Bounds radius. Read and stored, but has no effect in-game |
 | **float** | Elapsed Time. Initial playback time in seconds. Defines when the animation starts. Negative values delay playback; positive values begin playback from a specific offset. Values exceeding `(nFrames - 1) × frameDuration` causes the animation to display only the last keyframe
-| **uint32** | Debug flag. Reserved for internal development use. Should be ``0``. Non-zero values may trigger assertions or debug checks in development builds, but have no effect in retail versions
+| **uint32** | Debug flag. Reserved for internal development use. Should be ``0``. Non-zero values trigger assertions and additional checks that verify texture handle state. Has no effect in retail versions
 | **uint32[6]** | Ignored. Can contain any arbitrary data, typically zeros |
 | **uint32**  | Offset of [Texture Path](#texture-path) relative to the beginning of the file |
 | **uint32**  | Offset of [Face Data](#face-data) relative to the beginning of the file |
