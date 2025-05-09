@@ -19,7 +19,7 @@
 | **vector2** | 2 floats (U, V) |
 | **triangle** | 3 uint16 (vertex 0 ID, vertex 1 ID, vertex 2 ID) |
 
-# Chunk Structure
+# Data Structure
 The file consists of a header followed by multiple logical chunks, stored sequentially. Chunks do not have explicit identifiers or length fields; their locations are determined by offsets defined in the header.
 
 > **Note:** These "chunks" are a logical abstraction used in this specification for clarity.
@@ -75,8 +75,7 @@ Immediately following the Header is a table of offsets, one per keyframe. Each e
 | **byte[]**    | Padding to align to 16-byte boundary (if necessary) |
 
 ## Texture Path
-Warcraft engine parses the string from the beginning of the chunk to the first dot character (`.`). 
-After the dot there may be zeros or any arbitrary data. Accordingly, the extension of the texture file is not required.
+The string is parsed from the beginning of the chunk up to the first dot character (`.`). Any data following the dot, including zeros or arbitrary content, is ignored. As a result, the file extension is not required for texture lookup.
 #### Chunk structure
 | Type  | Description |
 |------|-------|
@@ -95,7 +94,7 @@ Each face is represented as three `uint16` with vertex numbers. All faces go one
 `U` and `V` are stored for each vertex. We can represent this as `vector2`. 
 The number of vertices is in the [Header](#header). 
 
-**Note**: The V coordinate is flipped (`v = 1 - v`), following the DirectX UV convention.
+> **Note**: The V coordinate is flipped (`v = 1 - v`), following the DirectX UV convention.
 
 #### Chunk structure
 | Type  | Description |
