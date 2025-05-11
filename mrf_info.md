@@ -1,27 +1,46 @@
-*Written by theguywhodoesntcare (sorry, I'm not a native English speaker lol). RU version hosted on XGM [here](https://xgm.guru/p/wc3/morf).*
-
-The format specification is in the [mrf_spec.md](mrf_spec.md) file.
+*Written by wiselen.  
+RU version hosted on XGM [here](https://xgm.guru/p/wc3/morf).*
 
 # Introduction
 
-I do not have access to the Warcraft source code and cannot know exactly all the details of the MRF format and the details of parsing this format by the game. This information and [specification](mrf_spec.md) is based solely on the study of six existing MRF files and experimental data obtained by me.
+This documentation and [specification](mrf_spec.md) are based on reverse engineering of six known `.mrf` files from Warcraft III. All information presented here is derived from analysis, testing, and experimentation.
 
 # Description
 
-.mrf is a three-dimensional model format that contains one vertex animation. These models were used by Blizzard for Arthas' cape in the classic cinematic model of the battle between Arthas and Illidan.
+MRF is a three-dimensional model format that contains one vertex animation. These models were used by Blizzard for Arthas' cape in the classic cinematic model of the battle between Arthas and Illidan.
 
-Speaking of Reforged, it seems that the correct render of the MRF is only possible in the classic version of the graphic (SD), while in the HD there are some troubles with blending.
+In the Reforged version correct render of the MRF is only possible in the classic version of the graphic (SD), while in the HD there are some troubles with blending.
 
 An array of triangles (faces), a UV Mapping and a path to a image texture are stored in the model as static data.
 The vertex data is divided into an array of keyframes. Each keyframe is represented as an array of coordinates and normals for each vertex. Keyframes replace each other at a given frequency, and the graphics engine interpolates the movement of the mesh between them.  
 
-It looks like MRF only supports one static texture without blending. Transparent pixels are rendered as black. 
+MRF only supports one static texture without blending. Transparent pixels are rendered as black. 
+
+The MRF format also contains two main parameters that control animation playback:
+
+- **Frame duration** — Defines the speed of the animation is seconds.
+
+    - For example, if frame duration equals `0.033` seconds (typical value in Blizzard files), the animation plays at roughly `30` FPS.
+
+    - If set to a negative value, the animation displays only the last keyframe.
+
+    - If set to `0`, the model is not rendered.
+
+- **Elapsed time** — Controls the starting point of the animation. This works, but is not used in Blizzard files.
+
+    - Negative values delay the start of playback.
+
+    - Positive values begin playback from a specified offset.
+
+    - If the value exceeds the total animation time, the animation is frozen at the last keyframe.
+
+See [specification](mrf_spec.md) for details.
 
 # Import description
 
-MRF files are linked to the MDX/MDL model through tracks of Event Objects (EVTS) with ***MRF*** (for example MRFx0000) and ***MRD*** (for example MRDx0000) identifiers.
+MRF files are linked to the MDX/MDL model through tracks of Event Objects (EVTS) with `MRF` and `MRD` identifiers.
 
-The ID of the event object is part of the path to the mrf file. A constant part of this path is **doodads\cinematic\arthasillidanfight\arthascape**. In fact, ID is nothing more than an arbitrary string.  
+The ID of the event object is embedded in the path to the MRF file. The hardcoded part of this path is `doodads\cinematic\arthasillidanfight\arthascape%s.mrf`, where the ID is substituted in place of `%s`. In essence, the ID is just an arbitrary string with a maximum length of `208` bytes.
 Here are examples in the table.
 
 | MRF (show)  | MRD (hide) | Path |
@@ -30,20 +49,58 @@ Here are examples in the table.
 | MRFX**12345** | MRDX**12345** | *doodads\cinematic\arthasillidanfight\arthascape**12345**.mrf* |
 | MRFX**helloworld** | MRDX**helloworld** | *doodads\cinematic\arthasillidanfight\arthascape**helloworld**.mrf* |
 
-Warcraft completely ignores the pivot point of the event object, as well as the translation, rotation and scaling tracks.
+MDL Example:
 
-Since the link to the mrf is part of the MDX/MDL, theoretically MRF can be played in any space where models can be played. But in fact, MRF *animation* is not supported everywhere.
+```
+EventObject "MRFxY" {
+    ObjectId A,
+    EventTrack B {
+        C,
+    }
+}
+```
+| Fielf  | Description |
+|------|-------|
+| `MRF`| The event object identifier. This tells the game that an MRF  should triggered |
+| `x` | A single character that serves to make the event object name unique. It follows Warcraft's naming conventions|
+| `Y` | An arbitrary string that represents the ID|
+| `A` | The node index in the MDX/MDL model to which this event object is attached |
+| `B` | The number of key frames in the event (usually `1`)|
+| `C` | The specific frame where the MRF object becomes visible and starts rendering|
+
+Warcraft ignores the pivot point of event object, as well as translation, rotation, and scaling tracks when rendering MRF models. Instead, the models are placed based on their internal coordinates without adjustments from the parent MDX model.
+
+Since the link to the MRF  is part of the MDX/MDL, theoretically MRF can be played in any space where models can be played. But in fact, MRF *animation* is not supported everywhere.
 
 There are three options to display the MRF model and play its animation:
-- Output a SPRITE frame using a camera from the MDX/MDL model. 
+- Output a `SPRITE` frame via Frames API using a camera from the MDX/MDL model. 
 *If a world frame is used as the parent, then the global lighting model (DNC with default directional light) from the current map will be used as the light source.*
 
-- Native PlayModelCinematic(MDX/MDL model) function.  For example *PlayModelCinematic( "Doodads\\Cinematic\\ArthasIllidanFight\\ArthasIllidanFight.mdl" )*
+- Native `PlayModelCinematic(MDX/MDL model)` function.  For example *PlayModelCinematic( "Doodads\\Cinematic\\ArthasIllidanFight\\ArthasIllidanFight.mdl" )*.
 
-- Using a model as a unit portrait. The portrait space uses the MDX internal camera, so we can also see the MRF animation.
+- Using a model as a unit portrait. MRF models can be displayed in the portrait view of units, utilizing the MDX camera. 
 
 As for the world space and the space of 3D menu screens and campaigns (in pre-reforged patches), MRF will also be rendered there, but only as a static object, that is, the mesh from zero frame of the MRF will be loaded.
 
-At the same time, MRF will not inherit the coordinates of the MDX model, that is, the world coordinates from zero frame of the MRF itself will be used.
+In short, **MRF animation is only functional in screen space, and while the map is running**.
 
-**Based on the above, we can understand that MPF animation works only in screen space and only during the game.**
+## Rendering Issues with Frame API
+
+When rendering MRF models through the **Frame API** as `SPRITE`, a particularly annoying issue may arise: the sprite can sometimes "sink" into world models. In other words, instead of rendering clearly above world geometry, it appears as though both world models and the sprite are being drawn in the same space. This creates a visual glitch where parts of the MRF model seem to be clipped or occluded by the environment.
+
+This is **not a specific issue with MRF**, but rather a general problem with `SPRITE` frames in Warcraft III. The exact mechanism is unclear, but from experimental observations, it seems that the issue might be related to depth calculations between the sprite's camera and the game world. 
+One possible explanation is that the distance from the sprite's camera to its vertices shold be less than the distance from the game camera to world objects. 
+
+
+### **Known Workarounds:**
+
+1. **Activating the Portrait Frame:**  
+In some cases this helps, perhaps the camera parameters from the portrait model begin to influence the sprite camera parameters.
+
+2. **Hiding Terrain:**  
+Using the native function `BlzShowTerrain(false)`. This does not fully solve the issue, but it prevents SPRITE frames from completely sinking under the landscape.
+
+3. **Using UjAPI for Pre-Reforged Patches:**  
+The UjAPI dev claims to have patched this issue.
+
+For MRF output via portrait or `PlayModelCinematic` native, the issue is not relevant.
