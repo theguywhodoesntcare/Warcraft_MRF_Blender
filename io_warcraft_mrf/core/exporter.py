@@ -32,13 +32,11 @@ class MRFExporter:
         keyframes, duration = self.get_keyframes(uniq_vertices)
 
         elapsed_time = self._calculate_elapsed_time(duration)
-        print(self.playback_delay)
-        print(elapsed_time)
 
         base_vertices = [v['position'] for v in uniq_vertices]
 
         pivot = (0.0, 0.0, 0.0)
-        bounds_radius = 30.0
+        bounds_radius = 0.0
 
         if self.auto_bounds:
             pivot = self._compute_pivot(base_vertices)
