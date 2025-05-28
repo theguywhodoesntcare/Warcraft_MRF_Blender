@@ -28,11 +28,13 @@ class MRFWriter:
         self._write_chunks()
         self._patch_header_offsets()
 
+        if self.make_game_copy:
+            self._make_game_ready_copy(file_path)
+            return
+
         with open(file_path, 'wb') as f:
             f.write(self.buffer.getvalue())
       
-        if self.make_game_copy:
-            self._make_game_ready_copy(file_path)
 
     def _write_header_stub(self):
         m = self.model

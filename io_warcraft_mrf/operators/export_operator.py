@@ -92,8 +92,12 @@ class ExportMRFOperator(Operator, ExportHelper):
                                    playback_delay=self.playback_delay
                                    )
             model_data = exporter.export_to_modeldata()
+            file_path = self.filepath
+            if not file_path.lower().endswith('.mrf'):
+                file_path += '.mrf'
+
             writer = MRFWriter(model_data, signature=self.author_sign, make_game_copy=self.game_format)
-            writer.write(self.filepath)
+            writer.write(file_path)
 
             return {'FINISHED'}
         except Exception as e:
