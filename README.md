@@ -36,9 +36,9 @@ For exporting:
 4. **Place two markers on the timeline with the names `mrf`** (Hotkey `M` to add a marker, `F2` to rename). The animation between and inclusive of these two markers will be exported. Optionally, you can add a marker named `MRF_START` between these markers to start playing the animation in the game from it (but all frames will be written to the file). By default, if there are no markers, the animation between frames `0` and `23` inclusive will be exported.
 5. **Set the path to the texture (`Material Properties -> MRF Texture -> Path Property`)**. By default, if there is no texture path, the "Textures/white" path will be used.
 6. **Select one mesh object**, and use the `File -> Export -> Warcraft MORF (.mrf)` operator. Change the scaling factor and use [options](#export-options) if necessary.
-7. You can link the finished MRF file into the `.mdx` model through the MRF event object. Use any convenient model editor for this or edit it in text form.
+7. You can link the finished MRF file into the `.mdx` model through the MRF event object. Use any convenient model editor for this or edit it in text form. Or use my [fork](https://github.com/wiselencave/mdl-exporter) of Blender mdl exporter, it supports MRF and MRD events.
 
-Video is [here](https://youtu.be/3nIO81QYOqE).
+Video is [here](https://youtu.be/3nIO81QYOqE) (outdated).
 
 ## Export Options:
 - **Pack for import**. Make a copy and apply the path `doodads/cinematic/arthasillidanfight/arthascape` to it. Can export directly to the root of your map in folder mode.
