@@ -40,6 +40,8 @@ For exporting:
 
 Video is [here](https://youtu.be/3nIO81QYOqE) (outdated).
 
+Подробный гайд на русском языке по экспорту MRF из Blender под Warcraft 3 можно найти на [XGM](https://xgm.guru/p/wc3/mrf-export).
+
 ## Export Options:
 - **Pack for import**. Make a copy and apply the path `doodads/cinematic/arthasillidanfight/arthascape` to it. Can export directly to the root of your map in folder mode.
 - **Embed export signature**. Adds a 24-byte signature to the unused header space. Disable for clean exports.
